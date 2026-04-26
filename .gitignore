@@ -1,0 +1,132 @@
+# ==============================================================================
+# 1. ENVIRONMENT VARIABLES & SECRETS (BẢO MẬT - TUYỆT ĐỐI KHÔNG PUSH)
+# ==============================================================================
+# Chặn TẤT CẢ các file có đuôi .env hoặc bắt đầu bằng .env
+.env
+.env.*
+*.env
+# NGOẠI TRỪ các file mẫu an toàn không chứa mật khẩu thật
+!.env.example
+!.env.template
+!.env.sample
+
+# Chứng chỉ, khóa bảo mật, credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+credentials.json
+client_secret.json
+auth.json
+*secret*.json
+
+# ==============================================================================
+# 2. DEPENDENCY DIRECTORIES (CÁC GÓI THƯ VIỆN)
+# ==============================================================================
+node_modules/
+.pnpm-store/
+jspm_packages/
+web_modules/
+
+# ==============================================================================
+# 3. BUILD OUTPUTS & BUNDLES (KẾT QUẢ BIÊN DỊCH)
+# ==============================================================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.vuepress/
+.serverless/
+.output/
+.vercel/
+.netlify/
+
+# ==============================================================================
+# 4. LOGS & DEBUGGING (NHẬT KÝ HỆ THỐNG)
+# ==============================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.eslintcache
+.stylelintcache
+.prettiercache
+
+# ==============================================================================
+# 5. DATABASE & ORM (CƠ SỞ DỮ LIỆU LOCAL)
+# ==============================================================================
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+# Thư mục chứa local database của Prisma (nếu có)
+prisma/*.db
+prisma/*.db-journal
+
+# ==============================================================================
+# 6. CACHES & MONOREPO TOOLS (BỘ NHỚ TẠM)
+# ==============================================================================
+.turbo/
+.cache/
+.nx/
+tsconfigs.tsbuildinfo
+*.tsbuildinfo
+
+# ==============================================================================
+# 7. OS & IDE SETTINGS (CẤU HÌNH HỆ ĐIỀU HÀNH & EDITOR)
+# ==============================================================================
+# Mac & Windows
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editors (VS Code, IntelliJ, VIM)
+.idea/
+.vscode/*
+# Vẫn cho phép push cấu hình chung của team trong VS Code
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+
+# ==============================================================================
+# 8. TESTING & TOOLING (TEST & CÔNG CỤ KHÁC)
+# ==============================================================================
+coverage/
+.nyc_output/
+cypress/videos/
+cypress/screenshots/
+playwright-report/
+test-results/
+
+# Docker overrides (Chỉ dành cho local)
+docker-compose.override.yml
+.docker/
+
+# Storybook
+storybook-static/
+
+# ==============================================================================
+# 9. TEMP DIRECTORIES (THƯ MỤC TẠM)
+# ==============================================================================
+temp/
+tmp/
+.temp/

@@ -1,0 +1,16 @@
+{
+  "name": "postulate",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Social Media OS",
+  "scripts": {
+    "dev": "pnpm --parallel --recursive run dev",
+    "build": "pnpm --recursive run build",
+    "lint": "pnpm --recursive run lint",
+    "test": "pnpm --recursive run test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

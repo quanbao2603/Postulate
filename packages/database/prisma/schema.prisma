@@ -1,0 +1,370 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------
+// 1. Khối Quản trị & Xác thực (Auth & Tenant)
+// ------------------------------------------------------
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String?
+  name          String?
+  avatarUrl     String?
+  timezone      String    @default("UTC")
+  locale        String    @default("en")
+  emailVerified Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  oauthAccounts OAuthAccount[]
+  memberships   OrganizationMember[]
+  postsCreated  Post[]
+  mediaUploaded MediaItem[]
+  aiGenerations AIGeneration[]
+}
+
+model OAuthAccount {
+  id           String    @id @default(uuid())
+  userId       String
+  provider     String // 'google' | 'github'
+  providerId   String
+  accessToken  String?   @db.Text
+  refreshToken String?   @db.Text
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+}
+
+model Organization {
+  id                 String    @id @default(uuid())
+  name               String
+  slug               String    @unique
+  logoUrl            String?
+  timezone           String    @default("UTC")
+  apiKey             String?   @unique
+  credits            Int       @default(0)
+  subscriptionPlan   String    @default("trial")
+  subscriptionStatus String    @default("active")
+  trialEndsAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  members       OrganizationMember[]
+  channels      Channel[]
+  posts         Post[]
+  tags          Tag[]
+  mediaItems    MediaItem[]
+  webhooks      Webhook[]
+  aiGenerations AIGeneration[]
+  templates     Template[]
+  autoPlugs     AutoPlug[]
+  signatures    Signature[]
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model OrganizationMember {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  role           Role     @default(EDITOR)
+  invitedById    String?
+  joinedAt       DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+}
+
+// ------------------------------------------------------
+// 2. Khối Quản lý Mạng Xã Hội (Social Accounts)
+// ------------------------------------------------------
+
+enum Platform {
+  FACEBOOK
+  INSTAGRAM
+  X
+  LINKEDIN
+  TIKTOK
+  YOUTUBE
+  PINTEREST
+  MASTODON
+  BLUESKY
+}
+
+model Channel {
+  id             String    @id @default(uuid())
+  organizationId String
+  platform       Platform
+  name           String // Tên hiển thị tài khoản
+  profileUrl     String?   @db.Text
+  avatarUrl      String?   @db.Text
+  platformId     String
+  accessToken    String?   @db.Text // Được mã hóa AES-256
+  refreshToken   String?   @db.Text // Được mã hóa AES-256
+  tokenExpiresAt DateTime?
+  refreshNeeded  Boolean   @default(false)
+  isActive       Boolean   @default(true)
+  extraData      Json?
+  connectedAt    DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  postChannels PostChannel[]
+  analytics    ChannelAnalytics[]
+  autoPlugs    AutoPlug[]
+
+  @@unique([organizationId, platform, platformId])
+}
+
+// ------------------------------------------------------
+// 3. Khối Quản lý Nội dung (Posts, Templates, Media)
+// ------------------------------------------------------
+
+enum PostStatus {
+  DRAFT
+  NEEDS_APPROVAL
+  SCHEDULED
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
+
+model Post {
+  id             String  @id @default(uuid())
+  organizationId String
+  createdById    String
+  parentPostId   String? // Dùng cho Thread
+
+  content String     @db.Text
+  status  PostStatus @default(DRAFT)
+
+  publishDate    DateTime? // Thời gian dự kiến đăng
+  publishedAt    DateTime? // Thời gian thực tế đã đăng
+  intervalInDays Int? // Tần suất lặp lại
+
+  failReason     String? @db.Text
+  platformPostId String? // Dùng cho trường hợp 1 post = 1 channel nhanh, nhưng chuẩn là ở PostChannel
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id])
+  parentPost   Post?        @relation("Thread", fields: [parentPostId], references: [id])
+  childPosts   Post[]       @relation("Thread")
+
+  channels  PostChannel[]
+  media     PostMedia[]
+  tags      PostTag[]
+  analytics PostAnalytics?
+}
+
+enum PublishStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}
+
+model PostChannel {
+  id             String        @id @default(uuid())
+  postId         String
+  channelId      String
+  status         PublishStatus @default(PENDING)
+  platformPostId String?
+  publishedAt    DateTime?
+  failReason     String?       @db.Text
+
+  post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, channelId])
+}
+
+model Template {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  content        String   @db.Text
+  category       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Tag {
+  id             String @id @default(uuid())
+  organizationId String
+  name           String
+  color          String @default("#6B7280") // Hex color
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  posts        PostTag[]
+
+  @@unique([organizationId, name])
+}
+
+model PostTag {
+  postId String
+  tagId  String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+enum MediaProvider {
+  UPLOAD
+  STOCK
+  GIF
+}
+
+model MediaItem {
+  id             String        @id @default(uuid())
+  organizationId String
+  uploadedById   String
+  fileName       String
+  fileSize       BigInt
+  mimeType       String
+  storageUrl     String        @db.Text
+  storageKey     String        @db.Text
+  provider       MediaProvider @default(UPLOAD)
+  width          Int?
+  height         Int?
+  durationSec    Float?
+  thumbnailUrl   String?       @db.Text
+  createdAt      DateTime      @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+  posts        PostMedia[]
+}
+
+model PostMedia {
+  id        String @id @default(uuid())
+  postId    String
+  mediaId   String
+  sortOrder Int    @default(0)
+
+  post  Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  media MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, mediaId])
+}
+
+// ------------------------------------------------------
+// 4. Khối Thống kê (Analytics)
+// ------------------------------------------------------
+
+model ChannelAnalytics {
+  id            String   @id @default(uuid())
+  channelId     String
+  date          DateTime @db.Date
+  followerCount Int      @default(0)
+  reach         Int      @default(0)
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, date])
+}
+
+model PostAnalytics {
+  id        String   @id @default(uuid())
+  postId    String   @unique
+  likes     Int      @default(0)
+  comments  Int      @default(0)
+  shares    Int      @default(0)
+  clicks    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+// ------------------------------------------------------
+// 5. Khối Tính năng Nâng cao (AI & Misc)
+// ------------------------------------------------------
+
+enum AIGenerationType {
+  TEXT
+  IMAGE
+  REWRITE
+  IDEA
+}
+
+model AIGeneration {
+  id             String           @id @default(uuid())
+  organizationId String
+  userId         String
+  type           AIGenerationType
+  prompt         String           @db.Text
+  tone           String?
+  result         String?          @db.Text
+  creditsUsed    Int              @default(0)
+  model          String?
+  status         String           @default("success")
+  createdAt      DateTime         @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+}
+
+model Webhook {
+  id              String    @id @default(uuid())
+  organizationId  String
+  url             String    @db.Text
+  secret          String
+  events          String[]
+  isActive        Boolean   @default(true)
+  lastTriggeredAt DateTime?
+  failureCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model AutoPlug {
+  id             String   @id @default(uuid())
+  organizationId String
+  channelId      String?
+  content        String   @db.Text
+  delayMinutes   Int      @default(5)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  channel      Channel?     @relation(fields: [channelId], references: [id], onDelete: Cascade)
+}
+
+model Signature {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  content        String   @db.Text
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
