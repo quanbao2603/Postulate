@@ -1,86 +1,88 @@
 # 🚀 Postulate - Social Media OS
 
-**Postulate** là một hệ điều hành mạng xã hội (Social Media OS) và nền tảng lên lịch, quản lý bài đăng tự động. Dự án được thiết kế theo kiến trúc **Modular Monolith** kết hợp **Monorepo**, giúp tối ưu hóa việc quản lý mã nguồn, dễ dàng mở rộng và phân tách các service (như API, Frontend, Worker, AI) trong khi vẫn duy trì sự đơn giản của một repository duy nhất.
+**Postulate** is a comprehensive Social Media Operating System and automated post scheduling platform. The project is architected as a **Modular Monolith** within a **Monorepo** setup. This approach optimizes source code management, facilitates future scalability, and logically separates domain services (such as API, Frontend, Workers, and AI integrations) while maintaining the simplicity and developer experience of a single unified repository.
 
 ---
 
-## 🛠 Tech Stack (Công nghệ sử dụng)
+## 🛠 Tech Stack
 
-- **Package Manager:** [pnpm](https://pnpm.io/) (với tính năng Workspace).
-- **Backend API:** Node.js (Express / NestJS - *Tùy cấu hình*).
+- **Package Manager:** [pnpm](https://pnpm.io/) (utilizing pnpm workspaces).
+- **Backend API:** Node.js (Express / NestJS).
 - **Frontend:** Next.js / React.
-- **Database & ORM:** PostgreSQL kết hợp Prisma ORM.
+- **Database & ORM:** PostgreSQL managed via Prisma ORM.
 - **Architecture:** Monorepo (pnpm workspaces) + Modular Monolith.
-- **Infrastructure:** Docker & Docker Compose cho môi trường local.
+- **Infrastructure:** Docker & Docker Compose for the local development environment.
 
 ---
 
-## 📂 Project Structure (Cấu trúc thư mục)
+## 📂 Project Structure
 
-Dự án được chia làm 2 phần chính: `apps` (các ứng dụng độc lập có thể chạy/deploy) và `packages` (các module, thư viện dùng chung).
+The repository is organized into two primary directories: `apps` (independently deployable applications) and `packages` (shared modules, libraries, and utilities).
 
 ```text
 Postulate/
 ├── apps/
-│   ├── api/            # Backend API chính xử lý requests.
-│   ├── frontend/       # Ứng dụng giao diện người dùng (Next.js/React).
-│   └── worker/         # Xử lý các tác vụ nền (background jobs/queues).
+│   ├── api/            # Main Backend API handling client requests.
+│   ├── frontend/       # User interface application (Next.js/React).
+│   └── worker/         # Background job processing and queues.
 │
 ├── packages/
-│   ├── ai-service/     # Tích hợp AI (ví dụ: gen text, image).
-│   ├── auth/           # Module xác thực và phân quyền (Authentication/Authorization).
-│   ├── config/         # Cấu hình chung cho toàn hệ thống (ESLint, Prettier, TSConfig).
-│   ├── core/           # Chứa các logic dùng chung cốt lõi.
-│   ├── database/       # Chứa Prisma Schema, Migrations và Database Client.
-│   ├── media/          # Quản lý hình ảnh, video tải lên.
-│   └── social-api/     # Tương tác với API của bên thứ 3 (Facebook, X, LinkedIn...).
+│   ├── ai-service/     # AI integration modules (e.g., text & image generation).
+│   ├── auth/           # Authentication and authorization module.
+│   ├── config/         # Shared system configurations (ESLint, Prettier, TSConfig).
+│   ├── core/           # Core shared business logic and utilities.
+│   ├── database/       # Prisma Schema, Migrations, and Database Client.
+│   ├── media/          # Uploaded media (images/videos) management.
+│   └── social-api/     # Third-party social network integrations (Facebook, X, LinkedIn...).
 ```
 
 ---
 
-## 🏁 Getting Started (Hướng dẫn cài đặt)
+## 🏁 Getting Started
 
-### 1. Yêu cầu hệ thống
-- Node.js (phiên bản LTS mới nhất)
+### 1. Prerequisites
+Ensure you have the following installed on your local machine:
+- Node.js (Latest LTS version)
 - pnpm (`npm install -g pnpm`)
-- Docker & Docker Compose (Dành cho database local)
+- Docker & Docker Compose (Required for local database setup)
 
-### 2. Cài đặt
+### 2. Installation & Setup
 
-**Bước 1: Clone dự án**
+**Step 1: Clone the repository**
 ```bash
 git clone https://github.com/quanbao2603/Postulate.git
 cd Postulate
 ```
 
-**Bước 2: Cài đặt dependencies**
-Do đây là Monorepo dùng pnpm, bạn chỉ cần chạy lệnh cài đặt ở thư mục gốc:
+**Step 2: Install dependencies**
+Since this is a pnpm monorepo, you only need to run the install command at the root directory:
 ```bash
 pnpm install
 ```
 
-**Bước 3: Thiết lập môi trường (.env)**
-- Copy file mẫu `.env.example` thành `.env` ở thư mục gốc.
-- Điền các thông tin kết nối Database, API Keys vào file `.env` vừa tạo. (Lưu ý file `.env` đã được chặn khỏi Git để bảo mật).
+**Step 3: Environment Variables (.env)**
+- Duplicate the `.env.example` file and rename it to `.env` at the root directory.
+- Fill in the required Database credentials and API Keys in your new `.env` file. (Note: `.env` is ignored by Git for security purposes).
 
-**Bước 4: Khởi động Database (Local)**
+**Step 4: Start the Local Database**
+Spin up the PostgreSQL database using Docker:
 ```bash
 docker-compose up -d
 ```
 
-**Bước 5: Khởi chạy dự án**
+**Step 5: Run the Development Server**
 ```bash
 pnpm dev
 ```
-*(Lệnh này sẽ khởi động đồng thời cả frontend, api và worker tuỳ thuộc vào cấu hình trong package.json)*
+*(This command will concurrently start the frontend, api, and worker applications based on the root package.json configuration)*
 
 ---
 
-## 📝 Quy chuẩn Code & Commit
+## 📝 Code & Commit Guidelines
 
-- **Commit:** Tuân thủ chuẩn [Conventional Commits](https://www.conventionalcommits.org/) (ví dụ: `feat:`, `chore:`, `fix:`).
-- Mọi logic liên quan đến Database phải được thao tác thông qua package `@postulate/database`.
-- Các nhánh mới nên được rẽ nhánh từ `main`.
+- **Commits:** We strictly follow the [Conventional Commits](https://www.conventionalcommits.org/) specification (e.g., `feat:`, `chore:`, `fix:`).
+- **Database Access:** All database interactions and logic must be routed through the `@postulate/database` package.
+- **Branching:** All new feature branches should be created off the `main` branch.
 
 ---
-*Dự án đang trong quá trình phát triển tích cực.*
+*This project is under active development.*
